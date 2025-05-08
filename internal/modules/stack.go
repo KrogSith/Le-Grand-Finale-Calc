@@ -1,4 +1,4 @@
-package stack
+package modules
 
 type stack[T comparable] struct {
 	array []T

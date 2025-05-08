@@ -1,7 +1,7 @@
 package calculation
 
 import (
-	"calculator/internal/stack"
+	"calculator/internal/modules"
 	"fmt"
 	"strconv"
 	"unicode"
@@ -239,10 +239,10 @@ func Calc(infixExpr string) (float64, error) {
 		return 0, fmt.Errorf("Invalid expression")
 	}
 
-	str, err := InfixExprToPostfixString(infixExpr, stack.NewStack[string](), stack.NewStack[string]())
+	str, err := InfixExprToPostfixString(infixExpr, modules.NewStack[string](), modules.NewStack[string]())
 	if err != nil {
 		return 0, err
 	}
 
-	return StackCalc(str, stack.NewStack[float64]())
+	return StackCalc(str, modules.NewStack[float64]())
 }
