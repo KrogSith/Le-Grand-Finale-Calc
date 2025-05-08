@@ -4,6 +4,7 @@ import (
 	"calculator/internal/modules"
 	"fmt"
 	"strconv"
+	"strings"
 	"unicode"
 )
 
@@ -223,6 +224,7 @@ func IsBracketsRight(str string) bool {
 
 // Calc() вызывает проверочные и вычислительные функции
 func Calc(infixExpr string) (float64, error) {
+	infixExpr = strings.ReplaceAll(infixExpr, " ", "")
 	for i := 0; i < len(infixExpr); i++ {
 		if infixExpr[i] == '+' || infixExpr[i] == '-' || infixExpr[i] == '/' || infixExpr[i] == '*' ||
 			infixExpr[i] == '(' || infixExpr[i] == ')' {
