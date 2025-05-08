@@ -1,16 +1,18 @@
 package modules
 
 type Expression struct {
-	Id     string  `json:"id"`
-	Status string  `json:"status"`
-	Result float64 `json:"result"`
+	Id         string  `json:"id"`
+	Expression string  `json:"expression"`
+	Status     string  `json:"status"`
+	Result     float64 `json:"result"`
 }
 
-func NewExpression(id string, status string, result float64) Expression {
+func NewExpression(id string, expression string, status string, result float64) Expression {
 	return Expression{
-		Id:     id,
-		Status: status,
-		Result: result,
+		Expression: expression,
+		Id:         id,
+		Status:     status,
+		Result:     result,
 	}
 }
 

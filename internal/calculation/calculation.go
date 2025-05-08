@@ -19,11 +19,11 @@ type PushPopper[T comparable] interface {
 // заполняет стек математических операций
 func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[string], postfixExpr PushPopper[string]) (PushPopper[string], error) {
 	for i := 0; i < len(infixExpr); i++ {
-		fmt.Println("===========================")
-		fmt.Println("operationsStack:", operationsStack)
-		fmt.Println("postfixExpr    :", postfixExpr)
+		//fmt.Println("===========================")
+		//fmt.Println("operationsStack:", operationsStack)
+		//fmt.Println("postfixExpr    :", postfixExpr)
 		s := string(infixExpr[i])
-		fmt.Println(s)
+		//fmt.Println(s)
 		// if s == " " {
 		// 	continue
 		// }
@@ -33,16 +33,16 @@ func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[strin
 			for j := i; j < len(infixExpr); j++ {
 				s = string(infixExpr[j])
 				s_rune := []rune(s)[0]
-				if unicode.IsDigit(s_rune) != true {
+				if !unicode.IsDigit(s_rune) {
 					postfixExpr.Push(number)
-					fmt.Printf("1 postfixExpr.Push(%v)\n", number)
+					//fmt.Printf("1 postfixExpr.Push(%v)\n", number)
 					i = j - 1
 					break
 				}
 				if j == len(infixExpr)-1 {
 					number += s
 					postfixExpr.Push(number)
-					fmt.Printf("2 postfixExpr.Push(%v)\n", number)
+					//fmt.Printf("2 postfixExpr.Push(%v)\n", number)
 					i = j
 					break
 				}
@@ -53,35 +53,35 @@ func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[strin
 
 		if s == "(" {
 			operationsStack.Push(s)
-			fmt.Printf("2.1 operationsStack.Push(%v)\n", s)
+			//fmt.Printf("2.1 operationsStack.Push(%v)\n", s)
 			continue
 		}
 		if s == "-" || s == "+" {
 			if operationsStack.Len() == 0 {
 				operationsStack.Push(s)
-				fmt.Printf("3 operationsStack.Push(%v)\n", s)
+				//fmt.Printf("3 operationsStack.Push(%v)\n", s)
 				continue
 			}
 			element := operationsStack.Pop()
-			fmt.Println("3.1 operationsStack.Pop() = ", element)
+			//fmt.Println("3.1 operationsStack.Pop() = ", element)
 
 			if element == "*" || element == "/" {
 				postfixExpr.Push(element)
-				fmt.Printf("3.2 postfixExpr.Push(%v)\n", element)
+				//fmt.Printf("3.2 postfixExpr.Push(%v)\n", element)
 
 				if operationsStack.Len() != 0 {
 					for i := operationsStack.Len() - 1; i >= 0; i-- {
 						element := operationsStack.Pop()
-						fmt.Println("3.2 operationsStack.Pop() = ", element)
+						//fmt.Println("3.2 operationsStack.Pop() = ", element)
 
 						if element == "(" || element == "+" || element == "-" {
 							postfixExpr.Push(element)
-							fmt.Printf("4 postfixExpr.Push(%v)\n", element)
+							//fmt.Printf("4 postfixExpr.Push(%v)\n", element)
 							break
 						}
 						if element == "*" || element == "/" {
 							postfixExpr.Push(element)
-							fmt.Printf("4.1 postfixExpr.Push(%v)\n", element)
+							//fmt.Printf("4.1 postfixExpr.Push(%v)\n", element)
 							continue
 						}
 					}
@@ -89,32 +89,32 @@ func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[strin
 			} else if element == "+" || element == "-" {
 				//operationsStack.Push(element)
 				postfixExpr.Push(element)
-				fmt.Printf("5 postfixExpr.Push(%v)\n", element)
+				//fmt.Printf("5 postfixExpr.Push(%v)\n", element)
 			}
 			operationsStack.Push(s)
-			fmt.Printf("6 operationsStack.Push(%v)\n", s)
+			//fmt.Printf("6 operationsStack.Push(%v)\n", s)
 			continue
 		}
 		if s == "*" || s == "/" {
 			if operationsStack.Len() == 0 {
 				operationsStack.Push(s)
-				fmt.Printf("6.1 postfixExpr.Push(%v)\n", s)
+				//fmt.Printf("6.1 postfixExpr.Push(%v)\n", s)
 				continue
 			}
 			element := operationsStack.Pop()
-			fmt.Println("6.2 operationsStack.Pop() = ", element)
+			//fmt.Println("6.2 operationsStack.Pop() = ", element)
 
 			if element == "+" || element == "-" {
 				operationsStack.Push(element)
 				operationsStack.Push(s)
-				fmt.Printf("7 operationsStack.Push(%v)\n", element)
-				fmt.Printf("8 operationsStack.Push(%v)\n", s)
+				//fmt.Printf("7 operationsStack.Push(%v)\n", element)
+				//fmt.Printf("8 operationsStack.Push(%v)\n", s)
 				continue
 			}
 			operationsStack.Push(element)
 			operationsStack.Push(s)
-			fmt.Printf("9 operationsStack.Push(%v)\n", element)
-			fmt.Printf("10 operationsStack.Push(%v)\n", s)
+			//fmt.Printf("9 operationsStack.Push(%v)\n", element)
+			//fmt.Printf("10 operationsStack.Push(%v)\n", s)
 
 			continue
 		}
@@ -142,7 +142,7 @@ func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[strin
 
 	for i := operationsStack.Len() - 1; i >= 0; i-- {
 		postfixExpr.Push(operationsStack.GetArray()[i])
-		fmt.Printf("11 postfixExpr.Push(%v)\n", operationsStack.GetArray()[i])
+		//fmt.Printf("11 postfixExpr.Push(%v)\n", operationsStack.GetArray()[i])
 		//fmt.Println("777777777777777777777")
 	}
 	//fmt.Println(operationsStack)
@@ -152,7 +152,7 @@ func InfixExprToPostfixString(infixExpr string, operationsStack PushPopper[strin
 // Проводит математические операции с полученным на вход выражением в постфиксной записи,
 // попутно заполняя и убирая элементы из стека с числами
 func StackCalc(postfixExpr PushPopper[string], numbersStack PushPopper[float64]) (float64, error) {
-	fmt.Println(postfixExpr)
+	//fmt.Println(postfixExpr)
 	for i := 0; i < postfixExpr.Len(); i++ {
 		element := postfixExpr.GetArray()[i]
 		// fmt.Println(element)
@@ -164,7 +164,7 @@ func StackCalc(postfixExpr PushPopper[string], numbersStack PushPopper[float64])
 		}
 
 		if numbersStack.Len() < 2 {
-			return 0, fmt.Errorf("Invalid expression")
+			return 0, fmt.Errorf("invalid expression")
 		}
 
 		if element == "+" {
@@ -195,7 +195,7 @@ func StackCalc(postfixExpr PushPopper[string], numbersStack PushPopper[float64])
 		}
 	}
 	if numbersStack.Len() != 1 {
-		return 0, fmt.Errorf("Invalid expression")
+		return 0, fmt.Errorf("invalid expression")
 	} else {
 		return numbersStack.Pop(), nil
 	}
@@ -230,13 +230,13 @@ func Calc(infixExpr string) (float64, error) {
 		} else {
 			_, err := strconv.Atoi(string(infixExpr[i]))
 			if err != nil {
-				return 0, fmt.Errorf("Invalid expression")
+				return 0, fmt.Errorf("invalid expression")
 			}
 		}
 	}
 
 	if !IsBracketsRight(infixExpr) {
-		return 0, fmt.Errorf("Invalid expression")
+		return 0, fmt.Errorf("invalid expression")
 	}
 
 	str, err := InfixExprToPostfixString(infixExpr, modules.NewStack[string](), modules.NewStack[string]())

@@ -2,23 +2,13 @@ package application
 
 import (
 	"calculator/internal/calculation"
-	"encoding/json"
-	"fmt"
+	"calculator/internal/modules"
 	"log"
 	"net/http"
 	"os"
-	"strconv"
+
+	"github.com/gorilla/mux"
 )
-
-var id int = 1
-var expressions = make([]expression, 0, 1024)
-
-type expression struct {
-	id     int
-	status string
-	result float64
-	task   string
-}
 
 type Config struct {
 	Addr string
@@ -62,14 +52,16 @@ func (a *Application) Run() error {
 	text := "(1-(2+3))+2-1"
 	result, _ := calculation.Calc(text)
 	log.Println(text, "=", result)
+
 	return nil
 }
 
 type Request struct {
 	Expression string `json:"expression"`
-	ID         int    `json:"id"`
-	Task       string `json:"task"`
+	Id         string `json:"id"`
 }
+
+var expressions modules.Expressions
 
 var COMPUTING_POWER int = 3
 
@@ -90,195 +82,10 @@ func Worker(req string) {
 	}
 }
 
-func CalcHandler(w http.ResponseWriter, r *http.Request) {
-	res := make(chan float64)
-	er := make(chan error)
-	request := new(Request)
-	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	Agent(request.Expression)
-	//result, err := calculation.Calc(request.Expression)
-	for i := 0; i < COMPUTING_POWER; i++ {
-		go func() {
-			for {
-				result, err := calculation.Calc(request.Expression)
-				if err != nil {
-					w.WriteHeader(http.StatusUnprocessableEntity)
-				}
-				res <- result
-				er <- err
-			}
-		}()
-	}
-	result := <-res
-	err = <-er
-	if err != nil {
-		w.WriteHeader(http.StatusUnprocessableEntity)
-	} else {
-		w.WriteHeader(http.StatusCreated)
-	}
-	fmt.Fprintln(w, "{")
-	if err != nil {
-		expr := expression{id: id, status: err.Error(), result: result, task: request.Expression}
-		expressions = append(expressions, expr)
-		fmt.Fprintf(w, "    \"error\": \"%s\"", err.Error())
-		id += 1
-	} else {
-		expr := expression{id: id, status: "OK", result: result, task: request.Expression}
-		expressions = append(expressions, expr)
-		fmt.Fprintf(w, "    \"id\": %v", id)
-		id += 1
-	}
-	fmt.Fprintln(w, "\n}")
-}
-
-func ExpressionsHandler(w http.ResponseWriter, r *http.Request) {
-	// request := new(Request)
-	// defer r.Body.Close()
-	// err := json.NewDecoder(r.Body).Decode(&request)
-	// if err != nil {
-	// 	http.Error(w, err.Error(), http.StatusBadRequest)
-	// 	return
-	// }
-
-	fmt.Fprintln(w, "{")
-	fmt.Fprintf(w, "    \"expressions\": [\n")
-	for i := 0; i < len(expressions); i++ {
-		fmt.Fprintf(w, "        {\n")
-		fmt.Fprintf(w, "            \"id\": %v\n", expressions[i].id)
-		fmt.Fprintf(w, "            \"status\": %v\n", expressions[i].status)
-		fmt.Fprintf(w, "            \"result\": %v\n", expressions[i].result)
-		fmt.Fprintf(w, "        },\n")
-	}
-	fmt.Fprintf(w, "    ]\n")
-	fmt.Fprintln(w, "}")
-}
-
-func IDHandler(w http.ResponseWriter, r *http.Request) {
-	request := new(Request)
-	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	for i := 0; i < len(expressions); i++ {
-		if request.ID == expressions[i].id {
-			break
-		} else if i == len(expressions)-1 {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}
-	if len(expressions) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-	}
-
-	fmt.Fprintln(w, "{")
-	fmt.Fprintf(w, "    \"expression\":\n")
-	fmt.Fprintf(w, "        {\n")
-	for i := 0; i < len(expressions); i++ {
-		if request.ID == expressions[i].id {
-			fmt.Fprintf(w, "            \"id\": %v\n", request.ID)
-			fmt.Fprintf(w, "            \"status\": %v\n", expressions[i].status)
-			fmt.Fprintf(w, "            \"result\": %v\n", expressions[i].result)
-			break
-		} else if i == len(expressions)-1 {
-			fmt.Fprintf(w, "            \"id\": %v\n", request.ID)
-			fmt.Fprintf(w, "            \"status\": \"Expression not found\"\n")
-			fmt.Fprintf(w, "            \"result\": \"Result not found\"\n")
-		}
-	}
-	if len(expressions) == 0 {
-		fmt.Fprintf(w, "            \"id\": %v\n", request.ID)
-		fmt.Fprintf(w, "            \"status\": \"Expression not found\"\n")
-		fmt.Fprintf(w, "            \"result\": \"Result not found\"\n")
-	}
-	fmt.Fprintf(w, "        }\n")
-	fmt.Fprintln(w, "}")
-}
-
-var TIME_ADDITION_MS int = 10
-var TIME_SUBTRACTION_MS int = 10
-var TIME_MULTIPLICATIONS_MS int = 10
-var TIME_DIVISIONS_MS int = 10
-
-func TaskHandler(w http.ResponseWriter, r *http.Request) {
-	request := new(Request)
-	defer r.Body.Close()
-	err := json.NewDecoder(r.Body).Decode(&request)
-	if err != nil {
-		http.Error(w, err.Error(), http.StatusBadRequest)
-		return
-	}
-	for i := 0; i < len(expressions); i++ {
-		if expressions[i].task == request.Task {
-			for j := 0; j < len(expressions[i].task); j++ {
-				if expressions[i].task[j] != '+' && expressions[i].task[j] != '-' && expressions[i].task[j] != '/' && expressions[i].task[j] != '*' && expressions[i].task[j] != '(' && expressions[i].task[j] != ')' {
-					_, err := strconv.Atoi(string(expressions[i].task[j]))
-					if err != nil {
-						w.WriteHeader(http.StatusUnprocessableEntity)
-						break
-					}
-				}
-			}
-		} else if len(expressions) == i {
-			w.WriteHeader(http.StatusNotFound)
-		}
-	}
-	if len(expressions) == 0 {
-		w.WriteHeader(http.StatusNotFound)
-	}
-
-	fmt.Fprintln(w, "{")
-	fmt.Fprintf(w, "    \"task\":\n")
-	fmt.Fprintf(w, "        {\n")
-	current_arg := 1
-	for i := 0; i < len(expressions); i++ {
-		if expressions[i].task == request.Task {
-			fmt.Fprintf(w, "            \"id\": %v\n", expressions[i].id)
-			for j := 0; j < len(expressions[i].task); j++ {
-				if expressions[i].task[j] == '+' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", "+")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", TIME_ADDITION_MS)
-				} else if expressions[i].task[j] == '-' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", "-")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", TIME_SUBTRACTION_MS)
-				} else if expressions[i].task[j] == '/' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", "/")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", TIME_DIVISIONS_MS)
-				} else if expressions[i].task[j] == '*' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", "*")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", TIME_MULTIPLICATIONS_MS)
-				} else if expressions[i].task[j] == '(' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", "(")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", 0)
-				} else if expressions[i].task[j] == ')' {
-					fmt.Fprintf(w, "            \"operation\": \"%v\"\n", ")")
-					fmt.Fprintf(w, "            \"operation_time\": %v\n", 0)
-				} else {
-					number, err := strconv.Atoi(string(expressions[i].task[j]))
-					if err != nil {
-						break
-					} else {
-						fmt.Fprintf(w, "            \"arg%v\": %v\n", current_arg, number)
-						current_arg += 1
-					}
-				}
-			}
-		}
-	}
-	fmt.Fprintf(w, "        }\n")
-	fmt.Fprintf(w, "}\n")
-}
-
 func (a *Application) RunServer() error {
-	http.HandleFunc("/api/v1/calculate", CalcHandler)
-	http.HandleFunc("/api/v1/expressions", ExpressionsHandler)
-	http.HandleFunc("/api/v1/expressions/:id", IDHandler)
-	http.HandleFunc("/internal/task", TaskHandler)
-	return http.ListenAndServe(":"+a.config.Addr, nil)
+	r := mux.NewRouter()
+	r.HandleFunc("/api/v1/calculate", CalcHandler)
+	r.HandleFunc("/api/v1/expressions", ExpressionsHandler)
+	r.HandleFunc("/api/v1/expressions/{id}", IDHandler).Methods("GET")
+	return http.ListenAndServe(":"+a.config.Addr, r)
 }
