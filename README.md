@@ -47,7 +47,7 @@
 Запрос:
 ```bash
 {
-    "name": "A"
+    "name": "A",
     "password": "B"
 }
 ```
@@ -64,7 +64,7 @@
 Запрос:
 ```bash
 {
-    "name": "A"
+    "name": "A",
     "password": "abb"
 }
 ```
