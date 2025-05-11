@@ -3,7 +3,6 @@ package application
 import (
 	"context"
 	"database/sql"
-	"log"
 	"strconv"
 
 	"github.com/google/uuid"
@@ -12,55 +11,69 @@ import (
 
 type (
 	User struct {
-		ID       int64
+		ID       string
 		Name     string
 		Password string
 	}
 
 	Expression struct {
-		ID         string
-		Expression string
-		UserID     int64
+		ID         string  `json:"id"`
+		Expression string  `json:"expression"`
+		UserID     string  `json:"userId"`
+		Status     string  `json:"status"`
+		Result     float64 `json:"result"`
 	}
 )
 
+func NewUser(name string, password string) User {
+	return User{
+		ID:       uuid.NewString(),
+		Name:     name,
+		Password: password,
+	}
+}
+
 func (u User) Print() string {
-	id := strconv.FormatInt(u.ID, 10)
-	return "ID: " + id + " Name: " + u.Name + " Password: " + u.Password
+	return "ID: " + u.ID + " Name: " + u.Name + " Password: " + u.Password
+}
+
+func NewExpression(expression string, userId string, status string, result float64) Expression {
+	return Expression{
+		ID:         uuid.NewString(),
+		Expression: expression,
+		UserID:     userId,
+		Status:     status,
+		Result:     result,
+	}
 }
 
 func (e Expression) Print() string {
-	userID := strconv.FormatInt(e.UserID, 10)
-	return "ID: " + e.ID + " Expression" + e.Expression + " UserID:" + userID
+	result := strconv.FormatFloat(e.Result, 'f', 10, 64)
+	return "ID: " + e.ID + " Expression" + e.Expression + " UserID:" + e.UserID + " Status:" + e.Status + " Result:" + result
 }
 
-func insertUser(ctx context.Context, db *sql.DB, user *User) (int64, error) {
+func insertUser(ctx context.Context, db *sql.DB, user User) error {
 	var q = `
-	INSERT INTO users (name, password) values ($1, $2)
+	INSERT INTO users (id, name, password) values ($1, $2, $3)
 	`
-	result, err := db.ExecContext(ctx, q, user.Name, user.Password)
+	_, err := db.ExecContext(ctx, q, user.ID, user.Name, user.Password)
 	if err != nil {
-		return 0, err
-	}
-	id, err := result.LastInsertId()
-	if err != nil {
-		return 0, err
+		return err
 	}
 
-	return id, nil
+	return nil
 }
 
-func insertExpression(ctx context.Context, db *sql.DB, expression *Expression) (string, error) {
+func insertExpression(ctx context.Context, db *sql.DB, expression Expression) error {
 	var q = `
-	INSERT INTO expressions (expression, user_id) values ($1, $2)
+	INSERT INTO expressions (id, expression, user_id, status, result) values ($1, $2, $3, $4, $5)
 	`
-	_, err := db.ExecContext(ctx, q, expression.Expression, expression.UserID)
+	_, err := db.ExecContext(ctx, q, expression.ID, expression.Expression, expression.UserID, expression.Status, expression.Result)
 	if err != nil {
-		return "", err
+		return err
 	}
-	id := uuid.NewString()
 
-	return id, nil
+	return nil
 }
 
 func selectUsers(ctx context.Context, db *sql.DB) ([]User, error) {
@@ -70,7 +83,7 @@ func selectUsers(ctx context.Context, db *sql.DB) ([]User, error) {
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	//defer rows.Close()
 
 	for rows.Next() {
 		u := User{}
@@ -86,27 +99,29 @@ func selectUsers(ctx context.Context, db *sql.DB) ([]User, error) {
 
 func selectExpressions(ctx context.Context, db *sql.DB) ([]Expression, error) {
 	var expressions []Expression
-	var q = "SELECT id, expression, user_id FROM expressions"
+	var q = "SELECT id, expression, user_id, status, result FROM expressions"
 
 	rows, err := db.QueryContext(ctx, q)
 	if err != nil {
 		return nil, err
 	}
-	defer rows.Close()
+	//defer rows.Close()
 
 	for rows.Next() {
 		e := Expression{}
-		err := rows.Scan(&e.ID, &e.Expression, &e.UserID)
+		err := rows.Scan(&e.ID, &e.Expression, &e.UserID, &e.Status, &e.Result)
 		if err != nil {
 			return nil, err
 		}
-		expressions = append(expressions, e)
+		if e.UserID == current_user {
+			expressions = append(expressions, e)
+		}
 	}
 
 	return expressions, nil
 }
 
-func selectUserByID(ctx context.Context, db *sql.DB, id int64) (User, error) {
+func selectUserByID(ctx context.Context, db *sql.DB, id string) (User, error) {
 	u := User{}
 	var q = "SELECT id, name, password FROM users WHERE id = $1"
 	err := db.QueryRowContext(ctx, q, id).Scan(&u.ID, &u.Name, &u.Password)
@@ -121,16 +136,18 @@ func createTables(ctx context.Context, db *sql.DB) error {
 	const (
 		usersTable = `
 	CREATE TABLE IF NOT EXISTS users(
-		id INTEGER PRIMARY KEY AUTOINCREMENT, 
-		name TEXT,
-		password TEXT
+		id TEXT NOT NULL, 
+		name TEXT NOT NULL,
+		password TEXT NOT NULL
 	);`
 
 		expressionsTable = `
 	CREATE TABLE IF NOT EXISTS expressions(
 		id TEXT NOT NULL, 
-		expression TEXT NOT NULL,
-		user_id INTEGER NOT NULL,
+		expression TEXT,
+		user_id TEXT NOT NULL,
+		status TEXT NOT NULL,
+		result INT,
 	
 		FOREIGN KEY (user_id)  REFERENCES expressions (id)
 	);`
@@ -147,67 +164,72 @@ func createTables(ctx context.Context, db *sql.DB) error {
 	return nil
 }
 
-func InitiateDatabase() {
+func InitiateDatabase() (context.Context, *sql.DB, error) {
 	ctx := context.TODO()
 
 	db, err := sql.Open("sqlite3", "store.db")
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
-	defer db.Close()
 
 	err = db.PingContext(ctx)
 	if err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
 	if err = createTables(ctx, db); err != nil {
-		panic(err)
+		return nil, nil, err
 	}
 
-	user := &User{
-		Name:     "Petr",
-		Password: "1234",
-	}
+	return ctx, db, nil
 
-	userID, err := insertUser(ctx, db, user)
-	if err != nil {
-		panic(err)
-	}
+	// user := &User{
+	// 	Name:     "Petr",
+	// 	Password: "1234",
+	// }
 
-	expression := &Expression{
-		Expression: "2+2",
-		UserID:     userID,
-	}
+	// userID, err := insertUser(ctx, db, user)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	expressionID, err := insertExpression(ctx, db, expression)
-	if err != nil {
-		panic(err)
-	}
+	// expression := &Expression{
+	// 	Expression: "2+2",
+	// 	UserID:     userID,
+	// }
 
-	expression.ID = expressionID
+	// expressionID, err := insertExpression(ctx, db, expression)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	users, err := selectUsers(ctx, db)
-	if err != nil {
-		panic(err)
-	}
+	// expression.ID = expressionID
 
-	for i := range users {
-		log.Println(users[i].Print())
-	}
+	// users, err := selectUsers(ctx, db)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	expressions, err := selectExpressions(ctx, db)
-	if err != nil {
-		panic(err)
-	}
+	// for i := range users {
+	// 	log.Println(users[i].Print())
+	// }
 
-	for i := range expressions {
-		log.Println(expressions[i].Print())
-	}
+	// expressions, err := selectExpressions(ctx, db)
+	// if err != nil {
+	// 	panic(err)
+	// }
 
-	u, err := selectUserByID(ctx, db, 1)
-	if err != nil {
-		panic(err)
-	}
-	log.Println(u.Print())
+	// for i := range expressions {
+	// 	log.Println(expressions[i].Print())
+	// }
+
+	// u, err := selectUserByID(ctx, db, 1)
+	// if err != nil {
+	// 	panic(err)
+	// }
+	// log.Println(u.Print())
+}
+
+func UserIsAuthorised() bool {
+	return current_user != ""
 }

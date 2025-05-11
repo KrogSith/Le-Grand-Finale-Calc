@@ -2,7 +2,6 @@ package application
 
 import (
 	"calculator/internal/calculation"
-	"calculator/internal/modules"
 	"log"
 	"net/http"
 	"os"
@@ -61,7 +60,7 @@ type Request struct {
 	Id         string `json:"id"`
 }
 
-var expressions modules.Expressions
+var current_user string = ""
 
 var COMPUTING_POWER int = 3
 
@@ -87,5 +86,7 @@ func (a *Application) RunServer() error {
 	r.HandleFunc("/api/v1/calculate", CalcHandler)
 	r.HandleFunc("/api/v1/expressions", ExpressionsHandler)
 	r.HandleFunc("/api/v1/expressions/{id}", IDHandler).Methods("GET")
+	r.HandleFunc("/api/v1/register", RegistrationHandler)
+	r.HandleFunc("/api/v1/login", LogInHandler)
 	return http.ListenAndServe(":"+a.config.Addr, r)
 }
