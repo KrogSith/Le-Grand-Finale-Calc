@@ -40,6 +40,74 @@
 
 
 ## Пример использования:
+Адрес: ```http://localhost:8080/api/v1/register```
+
+Запрос:
+```bash
+{
+    "name": "A"
+    "password": "B"
+}
+```
+Ответ:
+```bash
+{
+  "message": "Registration succesful. Welcome, A!"
+}
+```
+
+
+Адрес: ```http://localhost:8080/api/v1/register```
+
+Запрос:
+```bash
+{
+    "name": "A"
+    "password": "abb"
+}
+```
+Ответ:
+```bash
+{
+  "error": "User with this name already exists"
+}
+```
+
+
+Адрес: ```http://localhost:8080/api/v1/login```
+
+Запрос:
+```bash
+{ 
+    "name": "abba",
+    "password": "1"
+}
+```
+Ответ:
+```bash
+{
+  "error": "User not found"
+}
+```
+
+
+Адрес: ```http://localhost:8080/api/v1/login```
+
+Запрос:
+```bash
+{ 
+    "name": "A",
+    "password": "B"
+}
+```
+Ответ:
+```bash
+{
+  "message": "Welcome, A!"
+}
+```
+
+
 Адрес: ```http://localhost:8080/api/v1/calculate```
 
 Запрос:
@@ -51,7 +119,7 @@
 Ответ:
 ```bash
 {
-  "id": "47fe0a5c-2beb-4f7b-9704-e9ccb145683c"
+  "id": "2acabfe1-369d-4d8c-9047-333457912f9b"
 }
 ```
 
@@ -67,7 +135,7 @@
 Ответ:
 ```bash
 {
-    "id": 81f7fde0-23f7-4747-9ec6-40a2cb456038
+  "id": "75ba65cb-b287-4c09-81c9-7d797bb1efa8"
 }
 ```
 
@@ -82,7 +150,7 @@
 Ответ:
 ```bash
 {
-  "error": "Invalid expression"
+  "error": "invalid expression"
 }
 ```
 
@@ -98,21 +166,24 @@
 {
   "expressions": [
     {
-      "id": "47fe0a5c-2beb-4f7b-9704-e9ccb145683c",
+      "id": "2acabfe1-369d-4d8c-9047-333457912f9b",
       "expression": "2+2",
+      "userId": "09c2317c-fa53-4289-90f3-b646a8b7f6e4",
       "status": "OK",
       "result": 4
     },
     {
-      "id": "81f7fde0-23f7-4747-9ec6-40a2cb456038",
+      "id": "75ba65cb-b287-4c09-81c9-7d797bb1efa8",
       "expression": "124-(253878*351753)/1251",
+      "userId": "09c2317c-fa53-4289-90f3-b646a8b7f6e4",
       "status": "OK",
       "result": -71384646.69064748
     },
     {
-      "id": "6c145245-90f0-4e14-ae71-ad5714977b35",
+      "id": "8c989a26-f0d3-4d1b-bc8b-9f8ff1ce8082",
       "expression": "qwerty",
-      "status": "Invalid expression",
+      "userId": "09c2317c-fa53-4289-90f3-b646a8b7f6e4",
+      "status": "invalid expression",
       "result": 0
     }
   ]
@@ -120,7 +191,7 @@
 ```
 
 
-Адрес: ```http://localhost:8080/api/v1/expressions/47fe0a5c-2beb-4f7b-9704-e9ccb145683c```
+Адрес: ```http://localhost:8080/api/v1/expressions/75ba65cb-b287-4c09-81c9-7d797bb1efa8```
 
 Запрос:
 ```bash
@@ -129,9 +200,10 @@
 Ответ:
 ```bash
 {
-  "id": "47fe0a5c-2beb-4f7b-9704-e9ccb145683c",
-  "expression": "2+2",
+  "id": "75ba65cb-b287-4c09-81c9-7d797bb1efa8",
+  "expression": "124-(253878*351753)/1251",
+  "userId": "09c2317c-fa53-4289-90f3-b646a8b7f6e4",
   "status": "OK",
-  "result": 4
+  "result": -71384646.69064748
 }
 ```

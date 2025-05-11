@@ -6,7 +6,8 @@ import (
 	"strconv"
 
 	"github.com/google/uuid"
-	_ "github.com/mattn/go-sqlite3"
+	//_ "github.com/mattn/go-sqlite3"
+	_ "modernc.org/sqlite"
 )
 
 type (
@@ -167,7 +168,7 @@ func createTables(ctx context.Context, db *sql.DB) error {
 func InitiateDatabase() (context.Context, *sql.DB, error) {
 	ctx := context.TODO()
 
-	db, err := sql.Open("sqlite3", "store.db")
+	db, err := sql.Open("sqlite", "store.db")
 	if err != nil {
 		return nil, nil, err
 	}
@@ -182,52 +183,6 @@ func InitiateDatabase() (context.Context, *sql.DB, error) {
 	}
 
 	return ctx, db, nil
-
-	// user := &User{
-	// 	Name:     "Petr",
-	// 	Password: "1234",
-	// }
-
-	// userID, err := insertUser(ctx, db, user)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// expression := &Expression{
-	// 	Expression: "2+2",
-	// 	UserID:     userID,
-	// }
-
-	// expressionID, err := insertExpression(ctx, db, expression)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// expression.ID = expressionID
-
-	// users, err := selectUsers(ctx, db)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// for i := range users {
-	// 	log.Println(users[i].Print())
-	// }
-
-	// expressions, err := selectExpressions(ctx, db)
-	// if err != nil {
-	// 	panic(err)
-	// }
-
-	// for i := range expressions {
-	// 	log.Println(expressions[i].Print())
-	// }
-
-	// u, err := selectUserByID(ctx, db, 1)
-	// if err != nil {
-	// 	panic(err)
-	// }
-	// log.Println(u.Print())
 }
 
 func UserIsAuthorised() bool {

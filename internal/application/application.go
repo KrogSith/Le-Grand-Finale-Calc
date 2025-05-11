@@ -2,6 +2,7 @@ package application
 
 import (
 	"calculator/internal/calculation"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -88,5 +89,6 @@ func (a *Application) RunServer() error {
 	r.HandleFunc("/api/v1/expressions/{id}", IDHandler).Methods("GET")
 	r.HandleFunc("/api/v1/register", RegistrationHandler)
 	r.HandleFunc("/api/v1/login", LogInHandler)
+	fmt.Println("Server started")
 	return http.ListenAndServe(":"+a.config.Addr, r)
 }
